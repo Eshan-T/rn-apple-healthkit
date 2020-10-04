@@ -450,6 +450,55 @@
     [self.healthStore executeQuery:query];
 }
 
+- (void)fetchSumOfSamplesOnDayForTypeHourly:(HKQuantityType *)quantityType
+                                 unit:(HKUnit *)unit
+                                  day:(NSDate *)day
+                           completion:(void (^)(NSArray *, NSDate *, NSDate *, NSError *))completionHandler {
+
+    NSDateComponents *interval = [[NSDateComponents alloc] init];
+    interval.hour = 1;
+    
+    NSLog(@"Steps123");
+
+    NSDateComponents *dayComponent = [[NSDateComponents alloc] init];
+    dayComponent.day = 1;
+
+    NSCalendar *theCalendar = [NSCalendar currentCalendar];
+    NSDate *nextDate = [theCalendar dateByAddingComponents:dayComponent toDate:[NSDate date] options:0];
+
+    NSLog(@"nextDate: %@ ...", nextDate);
+    
+    NSPredicate *predicate = [RCTAppleHealthKit predicateForSamplesOnDay:day];
+   
+
+    HKStatisticsCollectionQuery *query = [[HKStatisticsCollectionQuery alloc] initWithQuantityType:quantityType quantitySamplePredicate:predicate options:HKStatisticsOptionCumulativeSum anchorDate:day intervalComponents:interval];
+
+    query.initialResultsHandler = ^(HKStatisticsCollectionQuery * _Nonnull query, HKStatisticsCollection * _Nullable result, NSError * _Nullable error) {
+      if (error != nil) {
+      } else {
+
+          NSMutableArray *data = [NSMutableArray arrayWithCapacity:27];
+
+        [result enumerateStatisticsFromDate:day toDate:nextDate withBlock:^(HKStatistics * _Nonnull result, BOOL * _Nonnull stop) {
+          HKQuantity *quantity = [result sumQuantity];
+          double steps = [quantity doubleValueForUnit:[HKUnit countUnit]];
+             NSArray *elem = @[ @(steps)];
+            [data addObject:elem];
+            
+
+        }];
+          
+        completionHandler(data,day, day, error);
+
+          
+          
+      }
+    };
+
+    [self.healthStore executeQuery:query];
+}
+
+
 
 - (void)fetchCumulativeSumStatisticsCollection:(HKQuantityType *)quantityType
                                           unit:(HKUnit *)unit

@@ -48,6 +48,41 @@
     }];
 }
 
+- (void)fitness_getStepCountOnDayHourly:(NSDictionary *)input callback:(RCTResponseSenderBlock)callback
+{
+    NSDate *date = [RCTAppleHealthKit dateFromOptions:input key:@"date" withDefault:[NSDate date]];
+
+    if(date == nil) {
+        callback(@[RCTMakeError(@"could not parse date from options.date", nil, nil)]);
+        return;
+    }
+
+    HKQuantityType *stepCountType = [HKObjectType quantityTypeForIdentifier:HKQuantityTypeIdentifierStepCount];
+    HKUnit *stepsUnit = [HKUnit countUnit];
+
+    [self fetchSumOfSamplesOnDayForTypeHourly:stepCountType
+                                   unit:stepsUnit
+                                    day:date
+                             completion:^(NSArray * value, NSDate *startDate, NSDate *endDate, NSError *error) {
+        if (!value) {
+            callback(@[RCTJSErrorFromNSError(error)]);
+            return;
+        }
+
+         NSDictionary *response = @{
+                 @"value" : value,
+                 @"startDate" : [RCTAppleHealthKit buildISO8601StringFromDate:startDate],
+                 @"endDate" : [RCTAppleHealthKit buildISO8601StringFromDate:endDate],
+         };
+        NSLog(@"Steps : %@", response);
+        NSLog(@"quick check bruv");
+
+
+
+        callback(@[[NSNull null], response]);
+    }];
+}
+
 - (void)fitness_getSamples:(NSDictionary *)input callback:(RCTResponseSenderBlock)callback
 {
     HKUnit *unit = [RCTAppleHealthKit hkUnitFromOptions:input key:@"unit" withDefault:[HKUnit countUnit]];
